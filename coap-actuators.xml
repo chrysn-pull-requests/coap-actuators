@@ -14,7 +14,7 @@
 <?rfc subcompact="no" ?>
 <?rfc iprnotified="no" ?>
 
-<rfc category="std" ipr="trust200902" docName="draft-mattsson-core-coap-actuators-02">
+<rfc category="std" ipr="trust200902" docName="draft-mattsson-core-coap-actuators-03">
 
 <front>
 
@@ -92,13 +92,16 @@
 
 <section title="Introduction">
 
-<t>Being able to trust information from sensors and to securely control actuators is essential in a world of connected and networking things interacting with the physical world. One protocol used to interact with sensors and actuators is the Constrained Application Protocol (CoAP) <xref target="RFC7252"/>. Any Internet-of-Things (IoT) deployment valuing security and privacy would use a security protocol such as DTLS <xref target="RFC6347"/>, TLS <xref target="RFC5246"/>, or OSCOAP <xref target="I-D.selander-ace-object-security"/> to protect CoAP, where the choice of security protocol depends on the transport protocol and the presence of intermediaries. The use of CoAP over UDP and DTLS is specified in <xref target="RFC6347"/> and the use of CoAP over TCP and TLS is specified in <xref target="I-D.ietf-core-coap-tcp-tls"/>. OSCOAP protects CoAP end-to-end with the use of COSE <xref target="I-D.ietf-cose-msg"/> and the CoAP Object-Security option <xref target="I-D.selander-ace-object-security"/>, and can therefore be used over any transport. In this document we show that protecting CoAP with a security protocol is not enough to securely control actuators. We describe several serious attacks any on-path attacker (i.e. not only “trusted” intermediaries) can do, and discusses tougher requirements and mechanisms to mitigate the attacks. The request delay attack (valid for DTLS, TLS, and OSCOAP and described in Section 2.2) lets an attacker control an actuator at a much later time than the client anticipated. The response delay and mismatch attack (valid for DTLS and described in Section 2.3) lets an attacker respond to a client with a response meant for an older request. In Section 3, a new CoAP Option, the Repeat Option, mitigating the delay attack in specified.
+<t>Being able to trust information from sensors and to securely control actuators is essential in a world of connected and networking things interacting with the physical world. One protocol used to interact with sensors and actuators is the Constrained Application Protocol (CoAP) <xref target="RFC7252"/>. Any Internet-of-Things (IoT) deployment valuing security and privacy would use a security protocol such as DTLS <xref target="RFC6347"/>, TLS <xref target="RFC5246"/>, or OSCOAP <xref target="I-D.selander-ace-object-security"/> to protect CoAP, where the choice of security protocol depends on the transport protocol and the presence of intermediaries. The use of CoAP over UDP and DTLS is specified in <xref target="RFC6347"/> and the use of CoAP over TCP and TLS is specified in <xref target="I-D.ietf-core-coap-tcp-tls"/>. OSCOAP protects CoAP end-to-end with the use of COSE <xref target="RFC8152"/> and the CoAP Object-Security option <xref target="I-D.selander-ace-object-security"/>, and can therefore be used over any transport. In this document we show that protecting CoAP with a security protocol is not enough to securely control actuators. We describe several serious attacks any on-path attacker (i.e. not only “trusted” intermediaries) can do, and discusses tougher requirements and mechanisms to mitigate the attacks. The request delay attack (valid for DTLS, TLS, and OSCOAP and described in Section 2.2) lets an attacker control an actuator at a much later time than the client anticipated. The response delay and mismatch attack (valid for DTLS and described in Section 2.3) lets an attacker respond to a client with a response meant for an older request. In Section 3, a new CoAP Option, the Repeat Option, mitigating the delay attack in specified.
 </t>
 
+    <section title="Terminology">
 
+        <t> The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and  "OPTIONAL" in this document are to be interpreted as described in BCP 14 <xref target="RFC2119"/> <xref target="RFC8174"/> when, and only when, they appear in all capitals, as shown here.</t>
+    </section>
 </section>
 
-<section title=" Attacks">
+<section title="Attacks">
 
 <t>Internet-of-Things (IoT) deployments valuing security and privacy, MUST use a security protocol such as DTLS, TLS, or OSCOAP to protect CoAP. This is especially true for deployments of actuators where attacks often (but not always) have serious consequences. The attacks described in this section are made under the assumption that CoAP is already protected with a security protocol such as DTLS, TLS, or OSCOAP, as an attacker otherwise can easily forge false requests and responses. 
 </t>
@@ -367,17 +370,17 @@ Client   Foe         Foe   Server
 </section>
 
 
-<section title="Request fragment rearrangement">
+<section title="The Request Fragment Rearrangement Attack">
 
 <t>These attack scenarios show that the Request Delay and Block Attacks can be
-used against blockwise transfers to cause a unauthorized operations to be
+used against blockwise transfers to cause unauthorized operations to be
 performed on the server, and responses to unauthorized operations to be
 mistaken for responses to authorized operations.
-It is described as a separate attack because it makes the Request Delay Attack
+The combination of these attacks is described as a separate attack because it makes the Request Delay Attack
 relevant to systems that are otherwise not time-dependent, which means that
 they could disregard the Request Delay Attack.</t>
 
-<t>They work even if the individual request/response pairs are encrypted,
+<t>This attack works even if the individual request/response pairs are encrypted,
 authenticated and protected against the Response Delay and Mismatch Attack,
 provided the attacker is on the network path and can correctly guess which
 operations the respective packages belong to.</t>
@@ -387,9 +390,9 @@ operations the respective packages belong to.</t>
 <t>In this scenario, blocks from two operations on a POST-accepting resource are
 combined to make the server execute an action that was not intended by the
 authorized client. This works only if the client attempts a second operation
-after first operation failed (due what the attacker made appear like a network
+after the first operation failed (due to what the attacker made appear like a network
 outage) within the replay window. The client does not receive a confirmation on
-the second operation either, but by the time, the server has already executed
+the second operation either, but, by the time the client acts on it, the server has already executed
 the unauthorized action.</t>
 
 <figure title="Attack example" anchor="promotevaljean"><artwork><![CDATA[
@@ -432,7 +435,7 @@ capabilities and setup, either of four outcomes could have occurred:</t>
 to the original "incarcerate" block; that's the expected case when the server
 can handle simultaneous block transfers.</t>
 
-<t>The server could respond 5.03 Service Unavailable a Max-Age indicating how
+<t>The server could respond 5.03 Service Unavailable, including a Max-Age option indicating how
 long it prefers not to take any requests that force it to overwrite the state
 kept for the "incarcerate" request.</t>
 
@@ -463,8 +466,8 @@ Client   Foe   Server
    +----->@      |    POST "Homeless stole apples. Wh"
    |      |      |        (Block1: 0, more to come)
 
-(Client: We'll try that one later again; for now, we have something more
-urgent:)
+(Client: We'll try that one later again; for now, we have something
+more urgent:)
 
    |      |      |
    +------------->    POST "Hitman killed someone. Wh"
@@ -483,7 +486,7 @@ urgent:)
    |      |      |        (Block1: 1, last block)
    |      |      |
    <-------------+    2.05 "Set him free."
-                          (Block1: 1 received, and this is the result)
+                          (Block1: 1 received and this is the result)
 ]]></artwork></figure>
 
 </section>
@@ -500,6 +503,11 @@ urgent:)
     
 </section>
 
+<section title="IANA Considerations">
+
+<t>This document has no actions for IANA.</t>
+    
+</section>
 
 <section title="Acknowledgements">
     
@@ -514,6 +522,8 @@ urgent:)
 <references title='Normative References'>
 
 <?rfc include="reference.RFC.7252.xml"?>
+<?rfc include="reference.RFC.2119.xml"?>
+<?rfc include="reference.RFC.8174.xml"?>
 
 </references>
 
@@ -523,7 +533,7 @@ urgent:)
 <?rfc include="reference.RFC.5246.xml"?>
 <?rfc include="reference.I-D.selander-ace-object-security"?>
 <?rfc include="reference.I-D.ietf-core-coap-tcp-tls"?>
-<?rfc include="reference.I-D.ietf-cose-msg"?>
+<?rfc include="reference.RFC.8152"?>
 <?rfc include="reference.I-D.selander-ace-cose-ecdhe"?>
 <?rfc include="reference.I-D.ietf-core-echo-request-tag"?>
  
