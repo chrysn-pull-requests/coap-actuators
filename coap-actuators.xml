@@ -367,17 +367,22 @@ Client   Foe         Foe   Server
 </section>
 
 
-<!-- The following could be grouped in a "Secondary attacks" section because
-     they are composed of earlier attacks, or just left as they are -->
+<section title="Request fragment rearrangement">
 
-<section title="Second block1 delay">
+<t>These attack scenarios show that the Request Delay and Block Attacks can be
+used against blockwise transfers to cause a unauthorized operations to be
+performed on the server, and responses to unauthorized operations to be
+mistaken for responses to authorized operations.
+It is described as a separate attack because it makes the Request Delay Attack
+relevant to systems that are otherwise not time-dependent, which means that
+they could disregard the Request Delay Attack.</t>
 
-<t>This attack scenario shows that the Request Delay and Block Attacks can be
-used against blockwise transfers to cause an unauthorized operation to be
-performed on the server.
-It is describe here because it makes the Request Delay Attack relevant to
-systems that are not time-dependent, which means that they could disregard the
-Request Delay Attack.</tt>
+<t>They work even if the individual request/response pairs are encrypted,
+authenticated and protected against the Response Delay and Mismatch Attack,
+provided the attacker is on the network path and can correctly guess which
+operations the respective packages belong to.</t>
+
+<section title="Completing an operation with an earlier final block">
 
 <t>In this scenario, blocks from two operations on a POST-accepting resource are
 combined to make the server execute an action that was not intended by the
@@ -412,29 +417,45 @@ Client   Foe   Server
 
 ]]></artwork></figure>
 
-<t>With Request-Tag in place, the client would have assigned a different
-Request-Tag to the “promote” line, and the server would have either reacted to
-the “valjean” POST by incarcerating valjean (if it could keep both operation
-states at the same time), or responded 5.03 to the “promote” request until a
-timeout, or responded 4.08 to the injected “valjean” request.</t>
+<t>Remedy: If a client starts new blockwise operations on a security context
+that has lost packages, it needs to label the fragments in such a way that the
+server will not mix them up.</t>
 
-<t>The client would only have been free to use the same Request-Tag on the
-“promote” POST as on the “incarcerate” POST if, in the meantime, it had
-exchanged enough messages that the latest message of the first use (“valjean”)
-is dropped from the server’s window, and thus the sever would not accept its
-replay.</t>
+<t>A mechanism to that effect is described as Request-Tag <xref
+target="I-D.ietf-core-echo-request-tag"/>. Had it been in place in the example
+and used for body integrity protection, the client would have set the
+Request-Tag option in the "promote" request.  Depending on the server's
+capabilities and setup, either of four outcomes could have occurred:</t>
+
+<t><list style="numbers">
+<t>The server could have processed the reinjected POST "valjean" as belonging
+to the original "incarcerate" block; that's the expected case when the server
+can handle simultaneous block transfers.</t>
+
+<t>The server could respond 5.03 Service Unavailable a Max-Age indicating how
+long it prefers not to take any requests that force it to overwrite the state
+kept for the "incarcerate" request.</t>
+
+<t>The server could decide to drop the state kept for the "incarcerate"
+request's state, and process the "promote" request. The reinjected POST
+"valjean" will then fail with 4.08 Request Entity incomplete, indicating that
+the server does not have the start of the operation any more.</t>
+</list></t>
 
 </section>
-<section title="First block1 delay">
 
-<t>In this example, mismatched Block1 packages against a resource that passes
-judgement are mixed up to create a response matched to the wrong operation.</t>
+<section title="Injecting a withheld first block">
 
-<t>Again, a first operation is aborted by the proxy (“Homeless stole apples. What
-shall we do with him?” – “Set him free.”), and a part of that operation is
-later used in a different operation to prime the server for responding
-leniently to another operation that would originally have been “Hitman killed
-someone. What shall we do with him?” – “Hang him.”.</t>
+<t>If the first block of a request is withheld by the attacker for later use,
+it can be used to have the server process a different request body than
+intended by the client. Unlike in the previous scenario, it will return a
+response based on that body to the client.</t>
+
+<t>Again, a first operation (that would go like “Homeless stole apples. What
+shall we do with him?” – “Set him free.”) is aborted by the proxy, and a part
+of that operation is later used in a different operation to prime the server
+for responding leniently to another operation that would originally have been
+“Hitman killed someone. What shall we do with him?” – “Hang him.”.</t>
 
 <figure title="Attack example" anchor="freethehitman"><artwork><![CDATA[
 Client   Foe   Server
@@ -465,14 +486,9 @@ urgent:)
                           (Block1: 1 received, and this is the result)
 ]]></artwork></figure>
 
-<t>The example works equivalently with longer responses, placing it in the <spanx style="emph">SS</spanx>
-category instead of the <spanx style="emph">SN</spanx>.</t>
-
-<t>[More examples would help, especially for the other blockwise cases. Is it
-relevant to distinguish non-piggybacked responses?]</t>
-
 </section>
 
+</section>
 
 
 </section>
@@ -509,6 +525,7 @@ relevant to distinguish non-piggybacked responses?]</t>
 <?rfc include="reference.I-D.ietf-core-coap-tcp-tls"?>
 <?rfc include="reference.I-D.ietf-cose-msg"?>
 <?rfc include="reference.I-D.selander-ace-cose-ecdhe"?>
+<?rfc include="reference.I-D.ietf-core-echo-request-tag"?>
  
 </references>
 
